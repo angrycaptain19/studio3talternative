@@ -9,8 +9,9 @@ from dotenv import load_dotenv
 
 class ConnectAutomation:
 
-    def __init__(self):
+    def __init__(self,value):
         load_dotenv()
+        self.password=value
         print("Begain")
 
     def unzip_folder(self,zip_folder, destination, pwd):
@@ -65,8 +66,8 @@ class ConnectAutomation:
 
             commands = [
                 "mongodump --uri=mongodb://{}:{}@{}:{}/{}".format(mongodb_username,mongodb_password,mongodb_host,mongodb_port,mongodb_database),
-                "ls"
-                # "sudo zip -r dump.zip dump"
+                "ls",
+                "sudo zip -r dump.zip dump"
             ]
 
             for command in commands:
@@ -81,9 +82,9 @@ class ConnectAutomation:
             scp = SCPClient(c.get_transport(), progress4=self.progress4)
             scp.get('dump.zip')  
             print("\n")
-            print("Enter your password")
-            pwd = getpass()
-            self.unzip_folder("dump.zip","dump",pwd)
+            # print("Enter your password")
+            # pwd = getpass()
+            self.unzip_folder("dump.zip","dump",self.password)
             os.system("mongo {} --eval 'db.dropDatabase()'".format(mongodb_database))
             db_command="mongorestore --db {} --verbose dump/dump/{}".format(mongodb_database,mongodb_database)
             os.system(db_command)
@@ -94,5 +95,4 @@ class ConnectAutomation:
             c.close()
        
 
-con=ConnectAutomation()
-con.ssh_connection()
+
