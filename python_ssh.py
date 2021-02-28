@@ -3,6 +3,8 @@ import sys
 from scp import SCPClient
 from zipfile import ZipFile
 from getpass import getpass
+import subprocess
+
 
 
 def unzip_folder(zip_folder, destination, pwd):
@@ -78,7 +80,11 @@ def ssh_connection():
         unzip_folder("dump.zip","dump",pwd)
 
         db_command="mongorestore --db {} --verbose dump/dump/{}".format(mongodb_database,mongodb_database)
-        c.exec_command(db_command)
+        # c.exec_command(db_command)
+
+        os.system(db_command)
+
+
         
     except Exception as e :
         print("Something goes wrong {}".format(str(e)))
