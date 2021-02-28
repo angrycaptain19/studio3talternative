@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"subCategoryId":{"$numberInt":"1"}},"name":"subCategoryId_1","sparse":true,"background":true}],"uuid":"162f6b3869e343bba222d76e5e28eff3","collectionName":"tunes"}
