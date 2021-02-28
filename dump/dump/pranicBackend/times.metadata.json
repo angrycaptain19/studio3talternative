@@ -1,1 +1,0 @@
-{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"time":{"$numberInt":"1"}},"name":"time_1","background":true},{"v":{"$numberInt":"2"},"key":{"subCategoryId":{"$numberInt":"1"}},"name":"subCategoryId_1","sparse":true,"background":true}],"uuid":"3e90687a46c44149ba96494c7829696b","collectionName":"times"}
