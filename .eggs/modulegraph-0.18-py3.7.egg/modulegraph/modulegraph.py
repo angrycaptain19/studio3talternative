@@ -44,12 +44,7 @@ else:
 
 
 # File open mode for reading (univeral newlines)
-if sys.version_info[0] == 2:
-    _READ_MODE = "rU"
-else:
-    _READ_MODE = "r"
-
-
+_READ_MODE = "rU" if sys.version_info[0] == 2 else "r"
 BOM = codecs.BOM_UTF8.decode("utf-8")
 
 
@@ -278,11 +273,12 @@ def find_module(name, path=None):
 
                 return (None, filename, description)
 
-        if hasattr(loader, "path"):
-            if loader.path.endswith(".pyc") or loader.path.endswith(".pyo"):
-                fp = open(loader.path, "rb")
-                description = (".pyc", "rb", imp.PY_COMPILED)
-                return (fp, loader.path, description)
+        if hasattr(loader, "path") and (
+            loader.path.endswith(".pyc") or loader.path.endswith(".pyo")
+        ):
+            fp = open(loader.path, "rb")
+            description = (".pyc", "rb", imp.PY_COMPILED)
+            return (fp, loader.path, description)
 
         if hasattr(loader, "get_source"):
             source = loader.get_source(name)
@@ -327,9 +323,10 @@ def find_module(name, path=None):
                 filename = loader.path
             elif hasattr(loader, "get_filename"):
                 filename = loader.get_filename(name)
-                if source is not None:
-                    if filename.endswith(".pyc") or filename.endswith(".pyo"):
-                        filename = filename[:-1]
+                if source is not None and (
+                    filename.endswith(".pyc") or filename.endswith(".pyo")
+                ):
+                    filename = filename[:-1]
             else:
                 filename = None
 
@@ -337,14 +334,13 @@ def find_module(name, path=None):
                 filename.endswith(".py") or filename.endswith(".pyw")
             ):
                 return (fp, filename, (".py", "rU", imp.PY_SOURCE))
-            else:
-                if fp is not None:
-                    fp.close()
-                return (
-                    None,
-                    filename,
-                    (os.path.splitext(filename)[-1], "rb", imp.C_EXTENSION),
-                )
+            if fp is not None:
+                fp.close()
+            return (
+                None,
+                filename,
+                (os.path.splitext(filename)[-1], "rb", imp.C_EXTENSION),
+            )
 
         else:
             if hasattr(loader, "path"):
@@ -550,10 +546,7 @@ class MissingModule(BadModule):
 class InvalidRelativeImport(BadModule):
     def __init__(self, relative_path, from_name):
         identifier = relative_path
-        if relative_path.endswith("."):
-            identifier += from_name
-        else:
-            identifier += "." + from_name
+        identifier += from_name if relative_path.endswith(".") else "." + from_name
         super(InvalidRelativeImport, self).__init__(identifier)
         self.relative_path = relative_path
         self.from_name = from_name
@@ -687,10 +680,7 @@ def _ast_names(names):
     return result
 
 
-if sys.version_info[0] == 2:
-    DEFAULT_IMPORT_LEVEL = -1
-else:
-    DEFAULT_IMPORT_LEVEL = 0
+DEFAULT_IMPORT_LEVEL = -1 if sys.version_info[0] == 2 else 0
 
 
 class _Visitor(ast.NodeVisitor):
@@ -717,9 +707,12 @@ class _Visitor(ast.NodeVisitor):
 
     def _process_import(self, name, fromlist, level):
 
-        if sys.version_info[0] == 2:
-            if name == "__future__" and "absolute_import" in (fromlist or ()):
-                self._level = 0
+        if (
+            sys.version_info[0] == 2
+            and name == "__future__"
+            and "absolute_import" in (fromlist or ())
+        ):
+            self._level = 0
 
         have_star = False
         if fromlist is not None:
@@ -946,17 +939,10 @@ class ModuleGraph(ObjectGraph):
         node = self.findNode(tonode)
         _, in_edges = self.get_edges(node)
 
-        if collapse_missing_modules:
-            for n in in_edges:
-                if isinstance(n, MissingModule):
-                    for n in self.getReferers(n, False):
-                        yield n
-
-                else:
-                    yield n
-
-        else:
-            for n in in_edges:
+        for n in in_edges:
+            if collapse_missing_modules and isinstance(n, MissingModule):
+                yield from self.getReferers(n, False)
+            else:
                 yield n
 
     def hasEdge(self, fromnode, tonode):
@@ -1150,17 +1136,9 @@ class ModuleGraph(ObjectGraph):
         package for the name
         """
         self.msgin(4, "find_head_package", parent, name, level)
-        if "." in name:
-            head, tail = name.split(".", 1)
-        else:
-            head, tail = name, ""
-
+        head, tail = name.split(".", 1) if "." in name else (name, "")
         if level == -1:
-            if parent:
-                qname = parent.identifier + "." + head
-            else:
-                qname = head
-
+            qname = parent.identifier + "." + head if parent else head
         elif level == 0:
             qname = head
 
@@ -1195,11 +1173,7 @@ class ModuleGraph(ObjectGraph):
                 assert new_parent is not parent, (new_parent, parent)
                 parent = new_parent
 
-            if head:
-                qname = parent.identifier + "." + head
-            else:
-                qname = parent.identifier
-
+            qname = parent.identifier + "." + head if head else parent.identifier
         q = self._import_module(head, qname, parent)
         if q:
             self.msgout(4, "find_head_package ->", (q, tail))
@@ -1244,8 +1218,8 @@ class ModuleGraph(ObjectGraph):
 
                 fullname = m.identifier + "." + sub
                 submod = self._import_module(sub, fullname, m)
-                if submod is None:
-                    raise ImportError("No module named " + fullname)
+            if submod is None:
+                raise ImportError("No module named " + fullname)
             yield submod
 
     def _find_all_submodules(self, m):
@@ -1426,22 +1400,14 @@ class ModuleGraph(ObjectGraph):
         self.msgin(2, "load_module", fqname, fp and "fp", pathname)
 
         if typ == imp.PKG_DIRECTORY:
-            if isinstance(mode, (list, tuple)):
-                packagepath = mode
-            else:
-                packagepath = []
-
+            packagepath = mode if isinstance(mode, (list, tuple)) else []
             m = self._load_package(fqname, pathname, packagepath)
             self.msgout(2, "load_module ->", m)
             return m
 
         if typ == imp.PY_SOURCE:
             contents = fp.read()
-            if isinstance(contents, bytes):
-                contents += b"\n"
-            else:
-                contents += "\n"
-
+            contents += b"\n" if isinstance(contents, bytes) else "\n"
             try:
                 co = compile(contents, pathname, "exec", ast.PyCF_ONLY_AST, True)
                 if sys.version_info[:2] == (3, 5):
@@ -1477,10 +1443,6 @@ class ModuleGraph(ObjectGraph):
                     cls = CompiledModule
                 except Exception as exc:
                     raise
-                    self.msgout(2, "raise ImportError: Cannot load code", pathname, exc)
-                    co = None
-                    cls = InvalidCompiledModule
-
         elif typ == imp.C_BUILTIN:
             cls = BuiltinModule
             co = None
@@ -1795,9 +1757,9 @@ class ModuleGraph(ObjectGraph):
                 c = code[i]
                 i += 1
                 if c >= HAVE_ARGUMENT:
-                    i = i + 2
+                    i += 2
 
-                if c == STORE_NAME or c == STORE_GLOBAL:
+                if c in [STORE_NAME, STORE_GLOBAL]:
                     # keep track of all global names that are assigned to
                     oparg = unpack("<H", code[i - 2 : i])[0]  # noqa: E203
                     name = co.co_names[oparg]
@@ -1837,7 +1799,7 @@ class ModuleGraph(ObjectGraph):
                 c = code[i]
                 i += 1
                 if c >= HAVE_ARGUMENT:
-                    i = i + 2
+                    i += 2
 
                 if c == IMPORT_NAME:
                     if extended_import:
@@ -1872,7 +1834,7 @@ class ModuleGraph(ObjectGraph):
                         if imported_module.code is None:
                             m.starimports.add(name)
 
-                elif c == STORE_NAME or c == STORE_GLOBAL:
+                elif c in [STORE_NAME, STORE_GLOBAL]:
                     # keep track of all global names that are assigned to
                     oparg = unpack("<H", code[i - 2 : i])[0]  # noqa: E203
                     name = co.co_names[oparg]
@@ -2128,10 +2090,9 @@ class ModuleGraph(ObjectGraph):
             # describe edge
             for (edge, data, head, tail) in edges:
                 attribs = edgevisitor(edge, data, head, tail)
-                yield edgestr % (
-                    head,
-                    tail,
-                    ",".join([(cpatt % item) for item in attribs.items()]),
+                yield (
+                    edgestr
+                    % (head, tail, ",".join(cpatt % item for item in attribs.items()))
                 )
 
         for g, edges in subgraphs.items():

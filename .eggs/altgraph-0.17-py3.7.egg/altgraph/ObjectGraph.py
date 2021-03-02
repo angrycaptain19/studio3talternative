@@ -136,8 +136,7 @@ class ObjectGraph(object):
         """
         if node is self:
             return node
-        ident = getattr(node, "graphident", None)
-        return ident
+        return getattr(node, "graphident", None)
 
     def __contains__(self, node):
         return self.findNode(node) is not None

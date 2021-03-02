@@ -2,10 +2,7 @@ import re
 import sys
 
 cookie_re = re.compile(br"coding[:=]\s*([-\w.]+)")
-if sys.version_info[0] == 2:
-    default_encoding = "ascii"
-else:
-    default_encoding = "utf-8"
+default_encoding = "ascii" if sys.version_info[0] == 2 else "utf-8"
 
 
 def guess_encoding(fp):

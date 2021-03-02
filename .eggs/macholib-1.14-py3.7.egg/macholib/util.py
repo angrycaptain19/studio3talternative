@@ -180,9 +180,7 @@ def in_system_path(filename):
     if fn.startswith("/usr/local/"):
         return False
     elif fn.startswith("/System/") or fn.startswith("/usr/"):
-        if fn in NOT_SYSTEM_FILES:
-            return False
-        return True
+        return fn not in NOT_SYSTEM_FILES
     else:
         return False
 
@@ -221,10 +219,7 @@ def is_platform_file(path):
             fileobj.seek(arch.offset)
             # Read magic off the first header
             bytes = fileobj.read(MAGIC_LEN)
-    for magic in MAGIC:
-        if bytes == magic:
-            return True
-    return False
+    return any(bytes == magic for magic in MAGIC)
 
 
 def iter_platform_files(dst):

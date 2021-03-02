@@ -62,8 +62,7 @@ def parse_arguments():
         "scripts", metavar="SCRIPT", nargs="+", help="scripts to analyse"
     )
 
-    opts = parser.parse_args()
-    return opts
+    return parser.parse_args()
 
 
 def create_graph(scripts, domods, debuglevel, excludes, path_extras):

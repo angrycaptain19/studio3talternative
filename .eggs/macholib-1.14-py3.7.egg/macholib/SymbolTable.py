@@ -77,10 +77,7 @@ class SymbolTable(object):
         self.undefsyms = nlists[
             cmd.iundefsym : cmd.iundefsym + cmd.nundefsym  # noqa: E203
         ]
-        if cmd.tocoff == 0:
-            self.toc = None
-        else:
-            self.toc = self.readtoc(fh, cmd.tocoff, cmd.ntoc)
+        self.toc = None if cmd.tocoff == 0 else self.readtoc(fh, cmd.tocoff, cmd.ntoc)
 
     def readtoc(self, fh, off, n):
         fh.seek(self.macho_header.offset + off)

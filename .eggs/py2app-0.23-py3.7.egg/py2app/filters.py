@@ -29,13 +29,7 @@ def not_stdlib_filter(module, prefix=None):
     rp = os.path.realpath(module.filename)
     if rp.startswith(prefix):
         rest = rp[len(prefix) :]  # noqa: E203
-        if "/site-python/" in rest:
-            return True
-        elif "/site-packages/" in rest:
-            return True
-        else:
-            return False
-
+        return "/site-python/" in rest or "/site-packages/" in rest
     if os.path.exists(os.path.join(prefix, ".Python")):
         # Virtualenv
         fn = os.path.join(
@@ -48,13 +42,7 @@ def not_stdlib_filter(module, prefix=None):
 
             if rp.startswith(prefix):
                 rest = rp[len(prefix) :]  # noqa: E203
-                if "/site-python/" in rest:
-                    return True
-                elif "/site-packages/" in rest:
-                    return True
-                else:
-                    return False
-
+                return "/site-python/" in rest or "/site-packages/" in rest
     return True
 
 

@@ -3,11 +3,13 @@ def _site_packages(prefix, real_prefix, global_site_packages):
     import site
     import sys
 
-    paths = []
+    paths = [
+        os.path.join(
+            prefix, "lib", "python" + sys.version[:3], "site-packages"
+        )
+    ]
 
-    paths.append(
-        os.path.join(prefix, "lib", "python" + sys.version[:3], "site-packages")
-    )
+
     if os.path.join(".framework", "") in os.path.join(prefix, ""):
         home = os.environ.get("HOME")
         if home:

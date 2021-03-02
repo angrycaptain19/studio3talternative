@@ -176,11 +176,10 @@ def rewrite_tkinter_load_commands(tkinter_path):
         for header in m.headers:
             for idx, _name, other in header.walkRelocatables():
                 data = rewrite_map.get(other)
-                if data:
-                    if header.rewriteDataForCommand(
-                        idx, data.encode(sys.getfilesystemencoding())
-                    ):
-                        rewroteAny = True
+                if data and header.rewriteDataForCommand(
+                    idx, data.encode(sys.getfilesystemencoding())
+                ):
+                    rewroteAny = True
 
         if rewroteAny:
             old_mode = flipwritable(m.filename)
@@ -228,9 +227,8 @@ class PythonStandalone(macholib.MachOStandalone.MachOStandalone):
 
 
     def update_node(self, m):
-        if isinstance(m, macholib.MachO.MachO):
-            if m.filename in self.ext_map:
-                m.loader_path = self.ext_map[m.filename]
+        if isinstance(m, macholib.MachO.MachO) and m.filename in self.ext_map:
+            m.loader_path = self.ext_map[m.filename]
         return m
 
     def copy_dylib(self, src):
@@ -874,27 +872,26 @@ class py2app(Command):
                     "This python does not have a shared library or framework"
                 )
 
-            else:
-                # Issue .. in py2app's tracker, and issue .. in python's
-                # tracker: a unix-style shared library build did not read the
-                # application environment correctly. The collection of
-                # if statements below gives a clean error message when py2app
-                # is started, instead of building a bundle that will give a
-                # confusing error message when started.
-                msg = (
-                    "py2app is not supported for a shared library build "
-                    "with this version of python"
-                )
-                if sys.version_info[:2] < (2, 7):
-                    raise DistutilsPlatformError(msg)
-                elif sys.version_info[:2] == (2, 7) and sys.version_info[3] < 4:
-                    raise DistutilsPlatformError(msg)
-                elif sys.version_info[0] == 3 and sys.version_info[1] < 2:
-                    raise DistutilsPlatformError(msg)
-                elif sys.version_info[:2] == (3, 2) and sys.version_info[3] < 3:
-                    raise DistutilsPlatformError(msg)
-                elif sys.version_info[:2] == (3, 3) and sys.version_info[3] < 1:
-                    raise DistutilsPlatformError(msg)
+            # Issue .. in py2app's tracker, and issue .. in python's
+            # tracker: a unix-style shared library build did not read the
+            # application environment correctly. The collection of
+            # if statements below gives a clean error message when py2app
+            # is started, instead of building a bundle that will give a
+            # confusing error message when started.
+            msg = (
+                "py2app is not supported for a shared library build "
+                "with this version of python"
+            )
+            if sys.version_info[:2] < (2, 7):
+                raise DistutilsPlatformError(msg)
+            elif sys.version_info[:2] == (2, 7) and sys.version_info[3] < 4:
+                raise DistutilsPlatformError(msg)
+            elif sys.version_info[0] == 3 and sys.version_info[1] < 2:
+                raise DistutilsPlatformError(msg)
+            elif sys.version_info[:2] == (3, 2) and sys.version_info[3] < 3:
+                raise DistutilsPlatformError(msg)
+            elif sys.version_info[:2] == (3, 3) and sys.version_info[3] < 1:
+                raise DistutilsPlatformError(msg)
 
         if (
             hasattr(self.distribution, "install_requires")
@@ -1077,10 +1074,7 @@ class py2app(Command):
         return dict(iterRecipes())
 
     def get_modulefinder(self):
-        if self.debug_modulegraph:
-            debug = 4
-        else:
-            debug = 0
+        debug = 4 if self.debug_modulegraph else 0
         return find_modules(
             scripts=self.collect_scripts(),
             includes=self.includes,
@@ -1301,11 +1295,7 @@ class py2app(Command):
                     ):
                         c = missing_unconditional
                         if ed.conditional or ed.function:
-                            if ed.fromlist:
-                                c = missing_fromimport_conditional
-                            else:
-                                c = missing_conditional
-
+                            c = missing_fromimport_conditional if ed.fromlist else missing_conditional
                         elif ed.fromlist:
                             c = missing_fromimport
 
@@ -1337,12 +1327,13 @@ class py2app(Command):
                         else:
                             o = __import__(m)
 
-                        if isinstance(o, types.ModuleType):
-                            if self.may_log_missing(m):
-                                warnings.append(
-                                    " * %s (%s) [module alias]"
-                                    % (m, ", ".join(sorted(missing_unconditional[m])))
-                                )
+                        if isinstance(
+                            o, types.ModuleType
+                        ) and self.may_log_missing(m):
+                            warnings.append(
+                                " * %s (%s) [module alias]"
+                                % (m, ", ".join(sorted(missing_unconditional[m])))
+                            )
 
                     except ImportError:
                         if self.may_log_missing(m):
@@ -1351,7 +1342,7 @@ class py2app(Command):
                                 % (m, ", ".join(sorted(missing_unconditional[m])))
                             )
 
-                if len(warnings) > 0:
+                if warnings:
                     log.warn("Modules not found (unconditional imports):")
                     for msg in warnings:
                         log.warn(msg)
@@ -1380,12 +1371,13 @@ class py2app(Command):
                         else:
                             o = __import__(m)
 
-                        if isinstance(o, types.ModuleType):
-                            if self.may_log_missing(m):
-                                warnings.append(
-                                    " * %s (%s) [module alias]"
-                                    % (m, ", ".join(sorted(missing_unconditional[m])))
-                                )
+                        if isinstance(
+                            o, types.ModuleType
+                        ) and self.may_log_missing(m):
+                            warnings.append(
+                                " * %s (%s) [module alias]"
+                                % (m, ", ".join(sorted(missing_unconditional[m])))
+                            )
                     except ImportError:
                         if self.may_log_missing(m):
                             warnings.append(
@@ -1393,7 +1385,7 @@ class py2app(Command):
                                 % (m, ", ".join(sorted(missing_conditional[m])))
                             )
 
-                if len(warnings) > 0:
+                if warnings:
                     log.warn("Modules not found (conditional imports):")
                     for msg in warnings:
                         log.warn(msg)
@@ -1676,10 +1668,7 @@ class py2app(Command):
         exts.append(".pyo")
 
         def datafilter(item):
-            for e in exts:
-                if item.endswith(e):
-                    return False
-            return True
+            return not any(item.endswith(e) for e in exts)
 
         target_dir = os.path.join(target_dir, *(package.identifier.split(".")))
         for dname in package.packagepath:
@@ -1752,9 +1741,7 @@ class py2app(Command):
             stripfiles.append(fn)
             log.info("stripping %s", os.path.basename(fn))
         strip_files(stripfiles, dry_run=self.dry_run, verbose=self.verbose)
-        stripped = 0
-        for fn in stripfiles:
-            stripped += os.stat(fn).st_size
+        stripped = sum(os.stat(fn).st_size for fn in stripfiles)
         log.info(
             "stripping saved %d bytes (%d / %d)",
             unstripped - stripped,
@@ -1832,11 +1819,7 @@ class py2app(Command):
                 # This is a copy of Python as shipped with Xcode
                 includedir = "python%d.%d%s" % (sys.version_info[:2] + (sys.abiflags,))
 
-        if configdir is None:
-            configdir = "config"
-        else:
-            configdir = os.path.basename(configdir)
-
+        configdir = "config" if configdir is None else os.path.basename(configdir)
         indir = os.path.dirname(os.path.join(info["location"], info["name"]))
         outdir = os.path.dirname(os.path.join(dst, info["name"]))
         if os.path.exists(outdir):
@@ -1922,10 +1905,7 @@ class py2app(Command):
 
         # make sure all targets use the same directory, this is
         # also the directory where the pythonXX.dylib must reside
-        paths = set()
-        for target in self.targets:
-            paths.add(os.path.dirname(target.get_dest_base()))
-
+        paths = {os.path.dirname(target.get_dest_base()) for target in self.targets}
         if len(paths) > 1:
             raise DistutilsOptionError(
                 "all targets must use the same directory: %s" % (list(paths),)
@@ -2072,9 +2052,8 @@ class py2app(Command):
             target.prescripts = newprescripts + prescripts
 
     def get_bootstrap(self, bootstrap):
-        if isinstance(bootstrap, basestring):
-            if not os.path.exists(bootstrap):
-                bootstrap = imp_find_module(bootstrap)[1]
+        if isinstance(bootstrap, basestring) and not os.path.exists(bootstrap):
+            bootstrap = imp_find_module(bootstrap)[1]
         return bootstrap
 
     def get_bootstrap_data(self, bootstrap):
@@ -2202,44 +2181,41 @@ class py2app(Command):
         self.compile_mappingmodels(resdir)
 
         bootfn = "__boot__"
-        bootfile = open(os.path.join(resdir, bootfn + ".py"), "w")
-        for fn in target.prescripts:
-            bootfile.write(self.get_bootstrap_data(fn))
-            bootfile.write("\n\n")
-        bootfile.write("DEFAULT_SCRIPT=%r\n" % (os.path.realpath(script),))
-        script_map = {}
-        for fn in extra_scripts:
-            tgt = os.path.realpath(fn)
-            fn = os.path.basename(fn)
-            if fn.endswith(".py"):
-                script_map[fn[:-3]] = tgt
-            elif fn.endswith(".py"):
-                script_map[fn[:-4]] = tgt
-            else:
-                script_map[fn] = tgt
+        with open(os.path.join(resdir, bootfn + ".py"), "w") as bootfile:
+            for fn in target.prescripts:
+                bootfile.write(self.get_bootstrap_data(fn))
+                bootfile.write("\n\n")
+            bootfile.write("DEFAULT_SCRIPT=%r\n" % (os.path.realpath(script),))
+            script_map = {}
+            for fn in extra_scripts:
+                tgt = os.path.realpath(fn)
+                fn = os.path.basename(fn)
+                if fn.endswith(".py"):
+                    script_map[fn[:-3]] = tgt
+                elif fn.endswith(".py"):
+                    script_map[fn[:-4]] = tgt
+                else:
+                    script_map[fn] = tgt
 
-        bootfile.write("SCRIPT_MAP=%r\n" % (script_map,))
-        bootfile.write("try:\n")
-        bootfile.write("    _run()\n")
-        bootfile.write("except KeyboardInterrupt:\n")
-        bootfile.write("    pass\n")
-        bootfile.close()
-
+            bootfile.write("SCRIPT_MAP=%r\n" % (script_map,))
+            bootfile.write("try:\n")
+            bootfile.write("    _run()\n")
+            bootfile.write("except KeyboardInterrupt:\n")
+            bootfile.write("    pass\n")
         target.appdir = appdir
         return appdir
 
     def copy_loader_paths(self, sourcefn, destfn):
         todo = [(sourcefn, destfn)]
-    
+
         while todo:
             next = []
             for item in todo:
                 for s, d in loader_paths(*item):
                     if os.path.exists(d): continue
                     next.append((s, d))
-                    if not self.dry_run:
-                       if not os.path.exists(os.path.dirname(d)):
-                          os.makedirs(os.path.dirname(d))
+                    if not self.dry_run and not os.path.exists(os.path.dirname(d)):
+                        os.makedirs(os.path.dirname(d))
                     copy_file(s, d, dry_run=self.dry_run)
             todo = next
 
@@ -2285,36 +2261,30 @@ class py2app(Command):
         else:
             includedir = os.path.basename(includedir)
 
-        if configdir is None:
-            configdir = "config"
-        else:
-            configdir = os.path.basename(configdir)
-
+        configdir = "config" if configdir is None else os.path.basename(configdir)
         self.compile_datamodels(resdir)
         self.compile_mappingmodels(resdir)
 
         bootfn = "__boot__"
-        bootfile = open(os.path.join(resdir, bootfn + ".py"), "w")
-        for fn in target.prescripts:
-            bootfile.write(self.get_bootstrap_data(fn))
-            bootfile.write("\n\n")
+        with open(os.path.join(resdir, bootfn + ".py"), "w") as bootfile:
+            for fn in target.prescripts:
+                bootfile.write(self.get_bootstrap_data(fn))
+                bootfile.write("\n\n")
 
-        bootfile.write("DEFAULT_SCRIPT=%r\n" % (os.path.basename(script),))
+            bootfile.write("DEFAULT_SCRIPT=%r\n" % (os.path.basename(script),))
 
-        script_map = {}
-        for fn in extra_scripts:
-            fn = os.path.basename(fn)
-            if fn.endswith(".py"):
-                script_map[fn[:-3]] = fn
-            elif fn.endswith(".py"):
-                script_map[fn[:-4]] = fn
-            else:
-                script_map[fn] = fn
+            script_map = {}
+            for fn in extra_scripts:
+                fn = os.path.basename(fn)
+                if fn.endswith(".py"):
+                    script_map[fn[:-3]] = fn
+                elif fn.endswith(".py"):
+                    script_map[fn[:-4]] = fn
+                else:
+                    script_map[fn] = fn
 
-        bootfile.write("SCRIPT_MAP=%r\n" % (script_map,))
-        bootfile.write("_run()\n")
-        bootfile.close()
-
+            bootfile.write("SCRIPT_MAP=%r\n" % (script_map,))
+            bootfile.write("_run()\n")
         self.copy_file(script, resdir)
         for fn in extra_scripts:
             self.copy_file(fn, resdir)
@@ -2461,10 +2431,7 @@ class py2app(Command):
 
         mkpath(os.path.dirname(zip_filename), dry_run=dry_run)
 
-        if self.compressed:
-            compression = zipfile.ZIP_DEFLATED
-        else:
-            compression = zipfile.ZIP_STORED
+        compression = zipfile.ZIP_DEFLATED if self.compressed else zipfile.ZIP_STORED
         if not dry_run:
             z = zipfile.ZipFile(zip_filename, "w", compression=compression)
             save_cwd = os.getcwd()

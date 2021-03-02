@@ -145,11 +145,7 @@ class MachO(object):
             self.load_header(fh, arch.offset, arch.size)
 
     def rewriteLoadCommands(self, *args, **kw):
-        changed = False
-        for header in self.headers:
-            if header.rewriteLoadCommands(*args, **kw):
-                changed = True
-        return changed
+        return any(header.rewriteLoadCommands(*args, **kw) for header in self.headers)
 
     def load_header(self, fh, offset, size):
         fh.seek(offset)
@@ -354,16 +350,16 @@ class MachOHeader(object):
         """
         data = changefunc(self.parent.filename)
         changed = False
-        if data is not None:
-            if self.rewriteInstallNameCommand(data.encode(sys.getfilesystemencoding())):
-                changed = True
+        if data is not None and self.rewriteInstallNameCommand(
+            data.encode(sys.getfilesystemencoding())
+        ):
+            changed = True
         for idx, _name, filename in self.walkRelocatables():
             data = changefunc(filename)
-            if data is not None:
-                if self.rewriteDataForCommand(
-                    idx, data.encode(sys.getfilesystemencoding())
-                ):
-                    changed = True
+            if data is not None and self.rewriteDataForCommand(
+                idx, data.encode(sys.getfilesystemencoding())
+            ):
+                changed = True
         return changed
 
     def rewriteDataForCommand(self, idx, data):

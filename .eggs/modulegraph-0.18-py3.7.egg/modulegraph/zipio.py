@@ -52,61 +52,55 @@ def _locate(path):
     if _os.path.exists(path):
         return path, None
 
-    else:
-        rest = []
-        root = _os.path.splitdrive(path)
-        while path and path != root:
-            path, bn = _os.path.split(path)
-            rest.append(bn)
-            if _os.path.exists(path):
-                break
+    rest = []
+    root = _os.path.splitdrive(path)
+    while path and path != root:
+        path, bn = _os.path.split(path)
+        rest.append(bn)
+        if _os.path.exists(path):
+            break
 
-        if path == root:
-            raise IOError(_errno.ENOENT, full_path, "No such file or directory")
+    if path == root:
+        raise IOError(_errno.ENOENT, full_path, "No such file or directory")
 
-        if not _os.path.isfile(path):
-            raise IOError(_errno.ENOENT, full_path, "No such file or directory")
+    if not _os.path.isfile(path):
+        raise IOError(_errno.ENOENT, full_path, "No such file or directory")
 
-        rest.reverse()
-        return path, "/".join(rest).strip("/")
+    rest.reverse()
+    return path, "/".join(rest).strip("/")
 
 
 _open = open
 
 
 def open(path, mode="r"):
-    if "w" in mode or "a" in mode:
+    if "w" in mode or "a" in mode or "r+" in mode:
         raise IOError(_errno.EINVAL, path, "Write access not supported")
-    elif "r+" in mode:
-        raise IOError(_errno.EINVAL, path, "Write access not supported")
-
     full_path = path
     path, rest = _locate(path)
     if not rest:
         return _open(path, mode)
 
-    else:
-        try:
-            zf = _zipfile.ZipFile(path, "r")
+    try:
+        zf = _zipfile.ZipFile(path, "r")
 
-        except _zipfile.error:
-            raise IOError(_errno.ENOENT, full_path, "No such file or directory")
+    except _zipfile.error:
+        raise IOError(_errno.ENOENT, full_path, "No such file or directory")
 
-        try:
-            data = zf.read(rest)
-        except (_zipfile.error, KeyError):
-            zf.close()
-            raise IOError(_errno.ENOENT, full_path, "No such file or directory")
+    try:
+        data = zf.read(rest)
+    except (_zipfile.error, KeyError):
         zf.close()
+        raise IOError(_errno.ENOENT, full_path, "No such file or directory")
+    zf.close()
 
-        if mode == "rb":
-            return _BytesIO(data)
+    if mode == "rb":
+        return _BytesIO(data)
 
-        else:
-            if _sys.version_info[0] == 3:
-                data = data.decode("ascii")
+    if _sys.version_info[0] == 3:
+        data = data.decode("ascii")
 
-            return _StringIO(data)
+    return _StringIO(data)
 
 
 def listdir(path):
@@ -115,46 +109,44 @@ def listdir(path):
     if not rest and not _os.path.isfile(path):
         return _os.listdir(path)
 
-    else:
-        try:
-            zf = _zipfile.ZipFile(path, "r")
+    try:
+        zf = _zipfile.ZipFile(path, "r")
 
-        except _zipfile.error:
-            raise IOError(_errno.ENOENT, full_path, "No such file or directory")
+    except _zipfile.error:
+        raise IOError(_errno.ENOENT, full_path, "No such file or directory")
 
-        result = set()
-        seen = False
-        try:
-            for nm in zf.namelist():
-                if rest is None:
+    result = set()
+    seen = False
+    try:
+        for nm in zf.namelist():
+            if rest is None:
+                seen = True
+                value = nm.split("/")[0]
+                if value:
+                    result.add(value)
+
+            elif nm.startswith(rest):
+                if nm == rest:
                     seen = True
-                    value = nm.split("/")[0]
-                    if value:
-                        result.add(value)
+                    value = ""
+                elif nm[len(rest)] == "/":
+                    seen = True
+                    value = nm[len(rest) + 1 :].split("/")[0]  # noqa: E203
+                else:
+                    value = None
 
-                elif nm.startswith(rest):
-                    if nm == rest:
-                        seen = True
-                        value = ""
-                        pass
-                    elif nm[len(rest)] == "/":
-                        seen = True
-                        value = nm[len(rest) + 1 :].split("/")[0]  # noqa: E203
-                    else:
-                        value = None
-
-                    if value:
-                        result.add(value)
-        except _zipfile.error:
-            zf.close()
-            raise IOError(_errno.ENOENT, full_path, "No such file or directory")
-
+                if value:
+                    result.add(value)
+    except _zipfile.error:
         zf.close()
+        raise IOError(_errno.ENOENT, full_path, "No such file or directory")
 
-        if not seen:
-            raise IOError(_errno.ENOENT, full_path, "No such file or directory")
+    zf.close()
 
-        return list(result)
+    if not seen:
+        raise IOError(_errno.ENOENT, full_path, "No such file or directory")
+
+    return list(result)
 
 
 def isfile(path):

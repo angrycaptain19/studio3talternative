@@ -111,11 +111,7 @@ def pypackable(name, pytype, format):
     size, items = _formatinfo(format)
 
     def __new__(cls, *args, **kwds):
-        if "_endian_" in kwds:
-            _endian_ = kwds.pop("_endian_")
-        else:
-            _endian_ = cls._endian_
-
+        _endian_ = kwds.pop("_endian_") if "_endian_" in kwds else cls._endian_
         result = pytype.__new__(cls, *args, **kwds)
         result._endian_ = _endian_
         return result
@@ -221,9 +217,7 @@ def _make():
     def _get_packables(self):
         for obj in imap(self._objects_.__getitem__, self._names_):
             if hasattr(obj, "_get_packables"):
-                for obj in obj._get_packables():
-                    yield obj
-
+                yield from obj._get_packables()
             else:
                 yield obj
 
@@ -291,9 +285,7 @@ def _make():
 
     @as_method
     def __repr__(self):
-        result = []
-        result.append("<")
-        result.append(type(self).__name__)
+        result = ["<", type(self).__name__]
         for nm in self._names_:
             result.append(" %s=%r" % (nm, getattr(self, nm)))
         result.append(">")

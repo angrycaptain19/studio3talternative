@@ -24,11 +24,7 @@ def check(cmd, mf):
     if m is None or m.filename is None:
         return None
 
-    if mf.findNode("PIL.Image"):
-        have_PIL = True
-    else:
-        have_PIL = False
-
+    have_PIL = bool(mf.findNode("PIL.Image"))
     plugins = set()
     visited = set()
     for folder in sys.path:
@@ -80,8 +76,6 @@ def check(cmd, mf):
         mf.removeReference(sip, "PyQt4")
         mf.removeReference(sip, "PyQt4.QtGui")
         mf.removeReference(sip, "PyQt4.QtCore")
-        pass
-
     imagefilter = mf.findNode("PIL.ImageFilter")
     if imagefilter is not None:
         # Optional dependency on numpy to process
