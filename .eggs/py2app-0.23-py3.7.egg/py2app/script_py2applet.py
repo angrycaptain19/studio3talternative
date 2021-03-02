@@ -168,11 +168,10 @@ def make_setup(args, scripts, data_files, options):
         if res == "n":
             print("aborted!")
             return
-    f = open("setup.py", "w")
-    tvars = tuple(map(pprint.pformat, (scripts, data_files, options)))
-    f.write(SETUP_TEMPLATE % tvars)
-    f.flush()
-    f.close()
+    with open("setup.py", "w") as f:
+        tvars = tuple(map(pprint.pformat, (scripts, data_files, options)))
+        f.write(SETUP_TEMPLATE % tvars)
+        f.flush()
     print("Wrote setup.py")
 
 
@@ -180,9 +179,7 @@ def build(args, scripts, data_files, options):
     old_argv = sys.argv
     sys.argv = [sys.argv[0], "py2app"] + args
     old_path = sys.path
-    path_insert = set()
-    for script in scripts:
-        path_insert.add(os.path.dirname(script))
+    path_insert = {os.path.dirname(script) for script in scripts}
     sys.path = list(path_insert) + old_path
     old_dir = os.getcwd()
     tempdir = tempfile.mkdtemp()

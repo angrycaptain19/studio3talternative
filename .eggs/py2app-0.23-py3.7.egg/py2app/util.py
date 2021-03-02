@@ -59,28 +59,27 @@ def path_to_zip(path):
     if os.path.exists(path):
         return (None, path)
 
-    else:
-        rest = ""
-        while not os.path.exists(path):
-            path, r = os.path.split(path)
-            if not path:
-                raise DistutilsFileError("File doesn't exist: %s" % (orig_path,))
-            rest = os.path.join(r, rest)
-
-        if not os.path.isfile(path):
-            # Directory really doesn't exist
+    rest = ""
+    while not os.path.exists(path):
+        path, r = os.path.split(path)
+        if not path:
             raise DistutilsFileError("File doesn't exist: %s" % (orig_path,))
+        rest = os.path.join(r, rest)
 
-        try:
-            zf = zipfile.ZipFile(path)
-            zf.close()
-        except zipfile.BadZipfile:
-            raise DistutilsFileError("File doesn't exist: %s" % (orig_path,))
+    if not os.path.isfile(path):
+        # Directory really doesn't exist
+        raise DistutilsFileError("File doesn't exist: %s" % (orig_path,))
 
-        if rest.endswith("/"):
-            rest = rest[:-1]
+    try:
+        zf = zipfile.ZipFile(path)
+        zf.close()
+    except zipfile.BadZipfile:
+        raise DistutilsFileError("File doesn't exist: %s" % (orig_path,))
 
-        return path, rest
+    if rest.endswith("/"):
+        rest = rest[:-1]
+
+    return path, rest
 
 
 def get_mtime(path, mustExist=True):
@@ -133,9 +132,8 @@ def copy_resource(source, destination, dry_run=0, symlink=0):
         return
 
     if os.path.isdir(source):
-        if not dry_run:
-            if not os.path.exists(destination):
-                os.mkdir(destination)
+        if not dry_run and not os.path.exists(destination):
+            os.mkdir(destination)
         for fn in zipio.listdir(source):
             copy_resource(
                 os.path.join(source, fn),
@@ -237,31 +235,6 @@ def find_version(fn):
     Try to find a __version__ assignment in a source file
     """
     return "0.0.0"
-    import compiler
-    from compiler.ast import Assign, AssName, Const, Module, Stmt
-
-    ast = compiler.parseFile(fn)
-    if not isinstance(ast, Module):
-        raise ValueError("expecting Module")
-    statements = ast.getChildNodes()
-    if not (len(statements) == 1 and isinstance(statements[0], Stmt)):
-        raise ValueError("expecting one Stmt")
-    for node in statements[0].getChildNodes():
-        if not isinstance(node, Assign):
-            continue
-        if not len(node.nodes) == 1:
-            continue
-        assName = node.nodes[0]
-        if not (
-            isinstance(assName, AssName)
-            and isinstance(node.expr, Const)
-            and assName.flags == "OP_ASSIGN"
-            and assName.name == "__version__"
-        ):
-            continue
-        return node.expr.value
-    else:
-        raise ValueError("Version not found")
 
 
 def in_system_path(filename):
@@ -462,10 +435,7 @@ byte_compile(files, optimize=%r, force=%r,
                     else:
                         dfile = cfile + ".py" + (__debug__ and "c" or "o")
                 else:
-                    if mod.packagepath:
-                        dfile = cfile + os.sep + "__init__.pyc"
-                    else:
-                        dfile = cfile + ".pyc"
+                    dfile = cfile + os.sep + "__init__.pyc" if mod.packagepath else cfile + ".pyc"
             if target_dir:
                 cfile = os.path.join(target_dir, dfile)
 
@@ -508,9 +478,7 @@ SCMDIRS = ["CVS", ".svn", ".hg", ".git"]
 def skipscm(ofn):
     ofn = fsencoding(ofn)
     fn = os.path.basename(ofn)
-    if fn in SCMDIRS:
-        return False
-    return True
+    return fn not in SCMDIRS
 
 
 def skipfunc(junk=(), junk_exts=(), chain=()):
@@ -652,11 +620,8 @@ def copy_tree(
         if preserve_symlinks and zipio.islink(src_name):
             link_dest = zipio.readlink(src_name)
             log.info("linking %s -> %s", dst_name, link_dest)
-            if not dry_run:
-                if update and not newer(src, dst_name):
-                    pass
-                else:
-                    make_symlink(link_dest, dst_name)
+            if not dry_run and (not update or newer(src, dst_name)):
+                make_symlink(link_dest, dst_name)
             outputs.append(dst_name)
 
         elif zipio.isdir(src_name) and not os.path.isfile(src_name):
@@ -690,8 +655,7 @@ def copy_tree(
 
 def walk_files(path):
     for _root, _dirs, files in os.walk(path):
-        for f in files:
-            yield f
+        yield from files
 
 
 def find_app(app):

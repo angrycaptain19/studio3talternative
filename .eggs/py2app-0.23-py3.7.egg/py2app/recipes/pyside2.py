@@ -43,9 +43,11 @@ def check(cmd, mf):
 
     for fn in os.listdir("/usr/lib"):
         add = False
-        if fn.startswith("libpyside2-python"):
-            add = True
-        elif fn.startswith("libshiboken2-python"):
+        if (
+            fn.startswith("libpyside2-python")
+            or not fn.startswith("libpyside2-python")
+            and fn.startswith("libshiboken2-python")
+        ):
             add = True
         if add:
             NOT_SYSTEM_FILES.append(os.path.join("/usr/lib", fn))

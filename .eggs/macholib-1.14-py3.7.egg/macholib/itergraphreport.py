@@ -61,10 +61,9 @@ def itergraphreport(nodes, describe_edge, name="G"):
         # describe edge
         for (edge, data, head, tail) in edges:
             attribs = edgevisitor(edge, data, head, tail)
-            yield edgestr % (
-                head,
-                tail,
-                ",".join([(cpatt % item) for item in attribs.items()]),
+            yield (
+                edgestr
+                % (head, tail, ",".join(cpatt % item for item in attribs.items()))
             )
 
     for s in do_graph(graph, "\t"):

@@ -126,15 +126,12 @@ def parse_mf_results(mf):
             continue
         src = item.filename
         if src and src != "-":
-            if isinstance(item, Script):
+            if isinstance(item, Script) or not isinstance(item, Extension):
                 # Scripts are python files
                 py_files.append(item)
 
-            elif isinstance(item, Extension):
-                extensions.append(item)
-
             else:
-                py_files.append(item)
+                extensions.append(item)
 
     # sort on the file names, the output is nicer to read
     py_files.sort(key=lambda v: v.filename)
@@ -164,7 +161,7 @@ def plat_prepare(includes, packages, excludes):
             ]
         )
 
-    if not sys.platform == "win32":
+    if sys.platform != "win32":
         # only win32
         excludes.update(
             [
@@ -190,13 +187,13 @@ def plat_prepare(includes, packages, excludes):
             ]
         )
 
-    if not sys.platform == "riscos":
+    if sys.platform != "riscos":
         excludes.update(["riscosenviron", "rourl2path"])
 
-    if not sys.platform == "dos" or sys.platform.startswith("ms-dos"):
+    if sys.platform != "dos" or sys.platform.startswith("ms-dos"):
         excludes.update(["dos"])
 
-    if not sys.platform == "os2emx":
+    if sys.platform != "os2emx":
         excludes.update(["_emx_link"])
 
     excludes.update(_PLATFORM_MODULES - set(sys.builtin_module_names))

@@ -26,9 +26,8 @@ def imp_find_module(name, path=None):
     same as imp.find_module, but handles dotted names
     """
     names = name.split(".")
-    if path is not None:
-        if isinstance(path, (str, unicode)):
-            path = [os.path.realpath(path)]
+    if path is not None and isinstance(path, (str, unicode)):
+        path = [os.path.realpath(path)]
     for name in names:
         result = imp.find_module(name, path)
         if result[0] is not None:
@@ -106,10 +105,7 @@ def imp_walk(name):
 
 
 cookie_re = re.compile(br"coding[:=]\s*([-\w.]+)")
-if sys.version_info[0] == 2:
-    default_encoding = "ascii"
-else:
-    default_encoding = "utf-8"
+default_encoding = "ascii" if sys.version_info[0] == 2 else "utf-8"
 
 
 def guess_encoding(fp):

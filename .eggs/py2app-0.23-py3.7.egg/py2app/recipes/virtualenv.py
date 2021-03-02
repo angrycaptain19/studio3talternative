@@ -106,11 +106,12 @@ def check(cmd, mf):
         # MissingModules in the distutils namespace as well and
         # try to import these again.
         for m in mf.flatten():
-            if isinstance(m, MissingModule):
-                if m.identifier.startswith("distutils."):
-                    # A missing distutils package, retry
-                    # importing it.
-                    #
-                    retry_import(mf, m)
+            if isinstance(m, MissingModule) and m.identifier.startswith(
+                "distutils."
+            ):
+                # A missing distutils package, retry
+                # importing it.
+                #
+                retry_import(mf, m)
 
     return {}

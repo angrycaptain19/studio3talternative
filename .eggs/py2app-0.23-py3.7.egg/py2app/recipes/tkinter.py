@@ -27,12 +27,10 @@ def check(cmd, mf):
 
         if fn.startswith("tk"):
             tk_path = fn
-            paths.append(os.path.join(lib, fn))
-
+            paths.append(os.path.join(lib, tk_path))
         elif fn.startswith("tcl"):
             tcl_path = fn
-            paths.append(os.path.join(lib, fn))
-
+            paths.append(os.path.join(lib, tcl_path))
     if not paths:
         return None
 

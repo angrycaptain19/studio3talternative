@@ -99,11 +99,7 @@ def check(cmd, mf):
                 # in significantly larger bundles
                 continue
 
-            if sys.version_info[0] == 2:
-                alt = SIX_TAB[submod][0]
-            else:
-                alt = SIX_TAB[submod][1]
-
+            alt = SIX_TAB[submod][0] if sys.version_info[0] == 2 else SIX_TAB[submod][1]
             if alt is None:
                 continue
 
@@ -126,11 +122,7 @@ def check(cmd, mf):
             name = mod + "." + submod
             m = mf.findNode(name)
             if m is not None:
-                if sys.version_info[0] == 2:
-                    alt = SIX_TAB[submod][0]
-                else:
-                    alt = SIX_TAB[submod][1]
-
+                alt = SIX_TAB[submod][0] if sys.version_info[0] == 2 else SIX_TAB[submod][1]
                 if alt is None:
                     continue
 

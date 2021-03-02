@@ -643,11 +643,7 @@ class Graph(object):
             num += len(nbr_set & sec_set)
 
         nbr_num = len(nbr_set)
-        if nbr_num:
-            clust_coef = float(num) / (nbr_num * (nbr_num - 1))
-        else:
-            clust_coef = 0.0
-        return clust_coef
+        return float(num) / (nbr_num * (nbr_num - 1)) if nbr_num else 0.0
 
     def get_hops(self, start, end=None, forward=True):
         """
